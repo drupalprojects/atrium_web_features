@@ -20,9 +20,11 @@ function atrium_web_features_menu_alter(&$items) {
     $items["web_feature/$node->nid"]["title"] = $node->title;
     $items["web_feature/$node->nid"]["title callback"] = NULL;
 
-
+    // @TODO: Add access check so web_feature nodes stay within their groups.
 
   }
+
+  // @TODO: Add an page under "Customize Features" for listing, adding and editing "web features"
 
 }
 
