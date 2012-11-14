@@ -69,9 +69,10 @@ function atrium_web_features_preprocess_page(&$vars){
     // Lets load CSS here, since we need it for every menu item
     if (isset($node->field_web_feature_icon[0]['filepath'])){
       $nid = $node->nid;
+      $path = drupal_html_class(drupal_get_path_alias("node/$nid"));
       $image_path = url($node->field_web_feature_icon[0]['filepath'], array('purl' => 'disabled'));
       $css .= "
-#features-menu li a.icon-node-$nid span.icon {
+#features-menu li a.icon-$path span.icon {
   background-image: url($image_path);
 }
 ";  
@@ -109,4 +110,32 @@ function atrium_web_features_page(){
   $output .= '<p>' . l(t('Add new Web Feature'), "node/add/web-feature", array('query' => array('destination' => $_GET['q']))) . '</p>'; 
   $output .= theme('table', $header, $rows);
   return $output;
+}
+
+/**
+ *
+ */
+function drupal_html_class($class) {
+  return drupal_clean_css_identifier(drupal_strtolower($class));
+}
+
+/**
+ * Prepares a string for use as a CSS identifier (element, class, or ID name).
+ * Backport from D7
+ */
+function drupal_clean_css_identifier($identifier, $filter = array(' ' => '-', '_' => '-', '/' => '-', '[' => '-', ']' => '')) {
+  // By default, we filter using Drupal's coding standards.
+  $identifier = strtr($identifier, $filter);
+
+  // Valid characters in a CSS identifier are:
+  // - the hyphen (U+002D)
+  // - a-z (U+0030 - U+0039)
+  // - A-Z (U+0041 - U+005A)
+  // - the underscore (U+005F)
+  // - 0-9 (U+0061 - U+007A)
+  // - ISO 10646 characters U+00A1 and higher
+  // We strip out any character not in the above list.
+  $identifier = preg_replace('/[^\x{002D}\x{0030}-\x{0039}\x{0041}-\x{005A}\x{005F}\x{0061}-\x{007A}\x{00A1}-\x{FFFF}]/u', '', $identifier);
+
+  return $identifier;
 }
