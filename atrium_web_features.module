@@ -13,19 +13,29 @@ function atrium_web_features_menu_alter(&$items) {
     $node = node_load($node->nid);
     
     // Add links to features menu for each feature
-    $items["web_feature/$node->nid"] = $items['node/%node'];
-    $items["web_feature/$node->nid"]["menu_name"] = 'features';
-    $items["web_feature/$node->nid"]["page callback"] = 'atrium_web_features_node_view';
-    $items["web_feature/$node->nid"]["type"] = MENU_NORMAL_ITEM;
-    $items["web_feature/$node->nid"]["title"] = $node->title;
-    $items["web_feature/$node->nid"]["title callback"] = NULL;
+    $items["node/$node->nid"] = $items['node/%node'];
+    $items["node/$node->nid"]["menu_name"] = 'features';
+    $items["node/$node->nid"]["page callback"] = 'atrium_web_features_node_view';
+    $items["node/$node->nid"]["access callback"] = 'atrium_web_features_spaces_menu_access';
+    $items["node/$node->nid"]["type"] = MENU_NORMAL_ITEM;
+    $items["node/$node->nid"]["title"] = $node->title;
+    $items["node/$node->nid"]["title callback"] = NULL;
+
 
     // @TODO: Add access check so web_feature nodes stay within their groups.
 
   }
+  // Add web features config page
+  $items['node/%node/features/web'] = array(
+    'title' => 'Web Features', 
+    'description' => 'Configure web features for this space.', 
+    'page callback' => 'atrium_web_features_page', 
+    'access callback' => 'spaces_access_admin', 
+    'access arguments' => array(), 
+    'type' => MENU_LOCAL_TASK, 
+  );
 
   // @TODO: Add an page under "Customize Features" for listing, adding and editing "web features"
-
 }
 
 /**
@@ -39,4 +49,37 @@ function atrium_web_features_node_view($nid, $cid = NULL){
   return node_page_view($node, $cid);
 }
 
+/**
+ * Access callback for the special menu items.
+ */
+function atrium_web_features_spaces_menu_access($op, $nid = NULL, $callback = 'node_access'){
+  return spaces_menu_access($op, node_load($nid), $callback);
+}
 
+/**
+ * Page Callback for /features/web
+ */
+function atrium_web_features_page(){
+  // Get current space
+  $space = spaces_get_space();
+  $group = $space->group; 
+
+  // Lookup web feature nodes (for this space)
+  $rows = array();
+  $header = array(t('Feature'), t('URL'), t('Actions'));
+  $results = db_query('SELECT n.nid FROM {node} n LEFT JOIN {og_ancestry} og ON n.nid = og.nid WHERE type = "web_feature" AND group_nid = %d', $group->nid);
+  while ($node = db_fetch_object($results)){
+    $node = node_load($node->nid);
+    $url = $node->field_web_feature_url[0]['url'];
+    $row = array();
+    $row[] = l($node->title, "node/$node->nid");
+    $row[] = l($url, $url);
+    $row[] = l(t('Edit'), "node/$node->nid/edit", array('query' => array('destination' => $_GET['q']))) .' | '. l(t('Delete'), "node/$node->nid/delete", array('query' => array('destination' => $_GET['q'])));
+    $rows[] = $row;
+  }
+ 
+  $output = '<p>' . t('Manage your Web Features here.') . '</p>';
+  $output .= '<p>' . l(t('Add new Web Feature'), "node/add/web-feature", array('query' => array('destination' => $_GET['q']))) . '</p>'; 
+  $output .= theme('table', $header, $rows);
+  return $output;
+}
