@@ -53,7 +53,30 @@ function atrium_web_features_node_view($nid, $cid = NULL){
  * Access callback for the special menu items.
  */
 function atrium_web_features_spaces_menu_access($op, $nid = NULL, $callback = 'node_access'){
-  return spaces_menu_access($op, node_load($nid), $callback);
+  $node = node_load($nid);
+ 
+  global $_atrium_web_features;
+
+  // Lets load CSS here, since we need it for every menu item
+  if (isset($node->field_web_feature_icon[0]['filepath'])){
+    $image_path = url($node->field_web_feature_icon[0]['filepath'], array('purl' => 'disabled'));
+
+    $css = "
+<style>
+#features-menu li a.icon-node-$nid span.icon {
+  background-image: url($image_path);
+</style>
+";
+
+    // @TODO: WHY NO WORKIE??
+    //  drupal_set_html_head($css);
+
+    // @TODO: Remove this hack!
+    print $css;
+  }
+
+  return spaces_menu_access($op, $node, $callback);
+
 }
 
 /**
