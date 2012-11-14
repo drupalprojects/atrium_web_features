@@ -1,0 +1,40 @@
+<?php
+
+include_once('atrium_web_features.features.inc');
+
+/**
+ * Implements hook_menu().
+ */
+function atrium_web_features_menu_alter(&$items) {
+  
+  // Lookup web feature nodes
+  $results = db_query('SELECT nid FROM {node} WHERE type = "web_feature"');
+  while ($node = db_fetch_object($results)){
+    $node = node_load($node->nid);
+    
+    // Add links to features menu for each feature
+    $items["web_feature/$node->nid"] = $items['node/%node'];
+    $items["web_feature/$node->nid"]["menu_name"] = 'features';
+    $items["web_feature/$node->nid"]["page callback"] = 'atrium_web_features_node_view';
+    $items["web_feature/$node->nid"]["type"] = MENU_NORMAL_ITEM;
+    $items["web_feature/$node->nid"]["title"] = $node->title;
+    $items["web_feature/$node->nid"]["title callback"] = NULL;
+
+
+
+  }
+
+}
+
+/**
+ * Replacement callback for node_page_view()
+ */
+function atrium_web_features_node_view($nid, $cid = NULL){
+  $node = node_load($nid);
+  
+  drupal_add_css(drupal_get_path('module', 'atrium_web_features') . '/style.css');
+  drupal_add_js(drupal_get_path('module', 'atrium_web_features') . '/scripts.js');
+  return node_page_view($node, $cid);
+}
+
+

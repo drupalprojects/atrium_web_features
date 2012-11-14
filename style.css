@@ -1,0 +1,21 @@
+
+#page {
+  position: relative;
+}
+#page .field-field-web-feature-url iframe {
+ position: absolute;
+  top: 0px;
+  left: 0px;
+}
+#page-tools {
+  display: none; 
+}
+#right {
+  display: none;
+}
+#content {
+  width: 100%;
+}
+.limiter {
+  margin: 0px 0;
+}
