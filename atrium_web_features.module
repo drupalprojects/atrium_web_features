@@ -43,7 +43,6 @@ function atrium_web_features_menu_alter(&$items) {
  */
 function atrium_web_features_node_view($nid, $cid = NULL){
   $node = node_load($nid);
-  
   drupal_add_css(drupal_get_path('module', 'atrium_web_features') . '/style.css');
   drupal_add_js(drupal_get_path('module', 'atrium_web_features') . '/scripts.js');
   return node_page_view($node, $cid);
@@ -65,7 +64,7 @@ function atrium_web_features_preprocess_page(&$vars){
   global $_atrium_web_features;
   
   $css = "<style>";
-  foreach ($_atrium_web_features as $node){
+  foreach ((array) $_atrium_web_features as $node){
     // Lets load CSS here, since we need it for every menu item
     if (isset($node->field_web_feature_icon[0]['filepath'])){
       $nid = $node->nid;
@@ -121,8 +120,23 @@ function atrium_web_features_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     case 'update':
       if ($node->type == 'web_feature') {
         menu_cache_clear();
+	drupal_set_message(t('Menu cache cleared'));
       }
-    break;
+      break;
+    case 'view':
+      $node->title = t('Loading !title', array('!title' => $node->title)) ;
+      $url = $node->field_web_feature_url[0]['url'];
+      
+      $t = array();
+      $t['!link'] = l($url, $url);
+      $t['!edit'] = l(t('Edit'), "node/$node->nid/edit");
+
+      $node->content['loading'] = array(
+        '#type' => 'markup',
+        '#value' => '<p>' . t('Now Loading !link.  If this URL fails to load, it is probaby because it is blocking inclusion in an iframe.  You can !edit this feature to change the Load Method to "New Window".', $t) . '<p>',
+      );
+      unset($node->content['field_web_feature_url']['#children']);
+      break;
   }
 }
 
