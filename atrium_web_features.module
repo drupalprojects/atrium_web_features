@@ -59,12 +59,23 @@ function atrium_web_features_spaces_menu_access($op, $nid = NULL, $callback = 'n
   return spaces_menu_access($op, $node, $callback);
 }
 
+/**
+ * Implements hook_preprocess_page()
+ * 
+ * 1. Adds generated CSS to allow the uploaded icon to be used in the menu.
+ * 2. Alters the menu link to allow for target='_blank'
+ */
 function atrium_web_features_preprocess_page(&$vars){
   
   global $_atrium_web_features;
-  
+  $popup_nodes = array();
   $css = "<style>";
   foreach ((array) $_atrium_web_features as $node){
+    // Save PopUp nodes for later
+    if ($node->field_web_feature_method[0]['value'] == 'popup'){
+      $popup_nodes[$node->nid] = $node->nid;
+    }
+
     // Lets load CSS here, since we need it for every menu item
     if (isset($node->field_web_feature_icon[0]['filepath'])){
       $nid = $node->nid;
@@ -79,8 +90,18 @@ function atrium_web_features_preprocess_page(&$vars){
   }
   
   $css .= "</style>";
-  
   $vars['styles'] .= $css;
+
+  if (!empty($vars['primary_links'])) {
+    foreach ($vars['primary_links'] as $k => &$v) {
+      foreach ($popup_nodes as $nid){
+        if ($v['href'] == "node/$nid") {
+          $v['attributes']['target'] = '_blank';
+        }
+      }
+    }
+  }
+
 }
 
 /**
