@@ -42,6 +42,12 @@ function atrium_web_features_menu_alter(&$items) {
  * Replacement callback for node_page_view()
  */
 function atrium_web_features_node_view($nid, $cid = NULL){
+
+  if ($node->field_web_feature_method[0]['value'] == 'popup' && arg(2) == 'go'){
+    $url = 
+    drupal_goto($url);
+  }
+
   $node = node_load($nid);
   drupal_add_css(drupal_get_path('module', 'atrium_web_features') . '/style.css');
   drupal_add_js(drupal_get_path('module', 'atrium_web_features') . '/scripts.js');
@@ -92,10 +98,13 @@ function atrium_web_features_preprocess_page(&$vars){
   $css .= "</style>";
   $vars['styles'] .= $css;
 
+  // Modify the primary link for features that are set as popups
   if (!empty($vars['primary_links'])) {
     foreach ($vars['primary_links'] as $k => &$v) {
       foreach ($popup_nodes as $nid){
         if ($v['href'] == "node/$nid") {
+          $v['attributes']['class'] .= ' icon-' . _ginkgo_icon_class($v['href']);
+          $v['href'] = $node->field_web_feature_url[0]['url'];
           $v['attributes']['target'] = '_blank';
         }
       }
