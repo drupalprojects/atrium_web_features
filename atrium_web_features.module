@@ -42,12 +42,6 @@ function atrium_web_features_menu_alter(&$items) {
  * Replacement callback for node_page_view()
  */
 function atrium_web_features_node_view($nid, $cid = NULL){
-
-  if ($node->field_web_feature_method[0]['value'] == 'popup' && arg(2) == 'go'){
-    $url = 
-    drupal_goto($url);
-  }
-
   $node = node_load($nid);
   drupal_add_css(drupal_get_path('module', 'atrium_web_features') . '/style.css');
   drupal_add_js(drupal_get_path('module', 'atrium_web_features') . '/scripts.js');
@@ -154,19 +148,31 @@ function atrium_web_features_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
       }
       break;
     case 'view':
-      $node->title = t('Loading !title', array('!title' => $node->title)) ;
-      $url = $node->field_web_feature_url[0]['url'];
-      
-      $t = array();
-      $t['!link'] = l($url, $url);
-      $t['!edit'] = l(t('Edit'), "node/$node->nid/edit");
 
-      $node->content['loading'] = array(
-        '#type' => 'markup',
-        '#value' => '<p>' . t('Now Loading !link.  If this URL fails to load, it is probaby because it is blocking inclusion in an iframe.  You can !edit this feature to change the Load Method to "New Window".', $t) . '<p>',
-      );
-      unset($node->content['field_web_feature_url']['#children']);
-      break;
+      $url = $node->field_web_feature_url[0]['url'];
+      $t = array();
+      $t['!link'] = l($node->title, $url);
+      $t['!edit'] = l(t('Edit'), "node/$node->nid/edit");
+      $t['!site_name'] = variable_get('site_name', 'Atrium');
+
+      // If type is popup, change messaging
+      if ($node->field_web_feature_method[0]['value'] == 'popup') {
+        $node->content['loading'] = array(
+          '#type' => 'markup',
+          '#value' => '<p>' . t('Now  leaving !site_name for !link', $t) . '<p>',
+        );
+        $node->field_web_feature_url = $node->content['field_web_feature_url'] = array();
+
+      } else {
+
+        // Change title
+        $node->title = t('Loading !title', array('!title' => $node->title)) ;
+        $node->content['loading'] = array(
+          '#type' => 'markup',
+          '#value' => '<p>' . t('Now Loading !link.  If this URL fails to load, it is probaby because it is blocking inclusion in an iframe.  You can !edit this feature to change the Load Method to "New Window".', $t) . '<p>',
+        );
+        break;
+     }
   }
 }
 
