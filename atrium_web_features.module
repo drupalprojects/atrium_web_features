@@ -112,6 +112,20 @@ function atrium_web_features_page(){
   return $output;
 }
 
+/** 
+ * Implements hook_nodeapi()
+ */
+function atrium_web_features_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      if ($node->type == 'web_feature') {
+        menu_cache_clear();
+      }
+    break;
+  }
+}
+
 /**
  *
  */
