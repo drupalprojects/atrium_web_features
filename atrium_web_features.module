@@ -73,7 +73,7 @@ function atrium_web_features_preprocess_page(&$vars){
   foreach ((array) $_atrium_web_features as $node){
     // Save PopUp nodes for later
     if ($node->field_web_feature_method[0]['value'] == 'popup'){
-      $popup_nodes[$node->nid] = $node->nid;
+      $popup_nodes[$node->nid] = $node->field_web_feature_url[0]['url'];
     }
 
     // Lets load CSS here, since we need it for every menu item
@@ -95,10 +95,10 @@ function atrium_web_features_preprocess_page(&$vars){
   // Modify the primary link for features that are set as popups
   if (!empty($vars['primary_links'])) {
     foreach ($vars['primary_links'] as $k => &$v) {
-      foreach ($popup_nodes as $nid){
+      foreach ($popup_nodes as $nid => $url){
         if ($v['href'] == "node/$nid") {
           $v['attributes']['class'] .= ' icon-' . _ginkgo_icon_class($v['href']);
-          $v['href'] = $node->field_web_feature_url[0]['url'];
+          $v['href'] = $url;
           $v['attributes']['target'] = '_blank';
         }
       }
