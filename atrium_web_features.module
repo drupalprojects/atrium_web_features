@@ -43,7 +43,6 @@ function atrium_web_features_menu_alter(&$items) {
  */
 function atrium_web_features_node_view($nid, $cid = NULL){
   $node = node_load($nid);
-  
   drupal_add_css(drupal_get_path('module', 'atrium_web_features') . '/style.css');
   drupal_add_js(drupal_get_path('module', 'atrium_web_features') . '/scripts.js');
   return node_page_view($node, $cid);
@@ -60,12 +59,23 @@ function atrium_web_features_spaces_menu_access($op, $nid = NULL, $callback = 'n
   return spaces_menu_access($op, $node, $callback);
 }
 
+/**
+ * Implements hook_preprocess_page()
+ * 
+ * 1. Adds generated CSS to allow the uploaded icon to be used in the menu.
+ * 2. Alters the menu link to allow for target='_blank'
+ */
 function atrium_web_features_preprocess_page(&$vars){
   
   global $_atrium_web_features;
-  
+  $popup_nodes = array();
   $css = "<style>";
-  foreach ($_atrium_web_features as $node){
+  foreach ((array) $_atrium_web_features as $node){
+    // Save PopUp nodes for later
+    if ($node->field_web_feature_method[0]['value'] == 'popup'){
+      $popup_nodes[$node->nid] = $node->field_web_feature_url[0]['url'];
+    }
+
     // Lets load CSS here, since we need it for every menu item
     if (isset($node->field_web_feature_icon[0]['filepath'])){
       $nid = $node->nid;
@@ -80,8 +90,21 @@ function atrium_web_features_preprocess_page(&$vars){
   }
   
   $css .= "</style>";
-  
   $vars['styles'] .= $css;
+
+  // Modify the primary link for features that are set as popups
+  if (!empty($vars['primary_links'])) {
+    foreach ($vars['primary_links'] as $k => &$v) {
+      foreach ($popup_nodes as $nid => $url){
+        if ($v['href'] == "node/$nid") {
+          $v['attributes']['class'] .= ' icon-' . _ginkgo_icon_class($v['href']);
+          $v['href'] = $url;
+          $v['attributes']['target'] = '_blank';
+        }
+      }
+    }
+  }
+
 }
 
 /**
@@ -121,8 +144,35 @@ function atrium_web_features_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     case 'update':
       if ($node->type == 'web_feature') {
         menu_cache_clear();
+	drupal_set_message(t('Menu cache cleared'));
       }
-    break;
+      break;
+    case 'view':
+
+      $url = $node->field_web_feature_url[0]['url'];
+      $t = array();
+      $t['!link'] = l($node->title, $url);
+      $t['!edit'] = l(t('Edit'), "node/$node->nid/edit");
+      $t['!site_name'] = variable_get('site_name', 'Atrium');
+
+      // If type is popup, change messaging
+      if ($node->field_web_feature_method[0]['value'] == 'popup') {
+        $node->content['loading'] = array(
+          '#type' => 'markup',
+          '#value' => '<p>' . t('Now  leaving !site_name for !link', $t) . '<p>',
+        );
+        $node->field_web_feature_url = $node->content['field_web_feature_url'] = array();
+
+      } else {
+
+        // Change title
+        $node->title = t('Loading !title', array('!title' => $node->title)) ;
+        $node->content['loading'] = array(
+          '#type' => 'markup',
+          '#value' => '<p>' . t('Now Loading !link.  If this URL fails to load, it is probaby because it is blocking inclusion in an iframe.  You can !edit this feature to change the Load Method to "New Window".', $t) . '<p>',
+        );
+        break;
+     }
   }
 }
 
